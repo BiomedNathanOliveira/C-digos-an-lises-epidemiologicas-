@@ -1,0 +1,80 @@
+
+# Grafico triangular de Correlação de Sperman 
+# Carregar as bibliotecas necessárias
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Lendo o banco de dados do Excel (substitua pelo seu próprio conjunto de dados)
+DF <- read_excel("D:/Laboratório/Tuberculose/DRS_Morans/BANCOS/Variaveis estudadas_22082023.xlsx")
+
+# Selecionar as colunas desejadas
+colunas_selecionadas <- DF[c("V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V11")]
+
+# Calcular a matriz de correlação de Spearman apenas para as colunas selecionadas
+matriz_correlacao <- cor(colunas_selecionadas, method = "spearman")
+
+# Acrescentar o p-valor
+install.packages("Hmisc")
+library(Hmisc)
+
+correlacao_p <- rcorr(matriz_correlacao, type = "spearman")
+
+# Acessar a matriz de correlação
+matriz_correlacao <- correlacao_p$r
+
+# Acessar a matriz de valores de p
+matriz_p <- correlacao_p$P
+
+# Transformar as matrizes em data frames e renomear as colunas
+matriz_correlacao_df <- as.data.frame(matriz_correlacao)
+matriz_p_df <- as.data.frame(matriz_p)
+
+# Adicionar uma coluna para representar as variáveis
+matriz_correlacao_df$variavel <- rownames(matriz_correlacao_df)
+matriz_p_df$variavel <- rownames(matriz_p_df)
+
+# Transformar os data frames no formato "long"
+matriz_correlacao_melted <- gather(matriz_correlacao_df, key = "Var2", value = "Correlation", -variavel)
+matriz_p_melted <- gather(matriz_p_df, key = "Var2", value = "p-value", -variavel)
+
+# Combinar as informações de correlações e p-value
+dados <- merge(matriz_correlacao_melted, matriz_p_melted)
+
+# Filtrar para mostrar apenas a metade triangular do mapa de calor
+dados <- dados %>%
+  filter(as.integer(factor(variavel)) >= as.integer(factor(Var2)))
+
+# Criar o gr?fico de mapa de calor triangular
+anlsperman<-ggplot(data = dados, aes(x = variavel, y = Var2, fill = Correlation)) +
+  geom_tile() +
+  geom_text(aes(label = paste("r:", round(Correlation, 2), "\n", "p-value:", round(`p-value`,5))),
+            color = "black", vjust = 0.5, size = 5) +
+  scale_fill_gradient(low = "#ffffd4", high = "#993404") +
+  theme_minimal() +theme(panel.grid = element_blank()) +
+  labs(title = "Mapa de Calor das Correlaes",
+       x = "Vari?veis",
+       y = "Vari?veis",
+       fill = "r-Sperman") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+##Grafico com paleta de cores
+
+anlsperman <- ggplot(data = dados, aes(x = variavel, y = Var2, fill = Correlation)) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("r: %.2f\np-value: %.3f", Correlation, `p-value`)),
+            color = "black", vjust = 0.5, size = 6) +
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) +
+  theme_minimal() +
+  theme(panel.grid = element_blank()) +
+  labs(title = "Mapa de Calor das Correlações",
+       x = "Variáveis",
+       y = "Variáveis",
+       fill = "r-Sperman") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Salve a figura. Atualize o caminho desejado, bem como as medidas e resolução
+ggsave("D:/Laboratório/Tuberculose/DRS_Morans/IMAGENS/gfcosperman.png", plot = anlsperman,
+       width = 20, height = 15, dpi = 500)
+
