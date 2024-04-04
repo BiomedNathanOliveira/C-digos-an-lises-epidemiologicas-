@@ -1,0 +1,31 @@
+#Grafico de colunas horizontal no R 
+#Instale os pacotes necessários 
+install.packages("ggplot2")
+install.packages("tidyverse ")
+install.packages("readxl ")
+
+#Carregue os pacotes que você irá usar 
+library(ggplot2)
+library(tidyverse)
+library(readxl)
+#Faça a leitura do data-base atualizando o caninho em seu computador 
+PROPC<-read_excel("D:/Laboratório/Tuberculose/DRS_Morans/BANCOS/Propdelotação.xlsx") 
+
+#visualise seu data-base 
+View(PROPC)
+
+#crie o gráfico de colunas, iremas chamar de “Graficocolot”
+Graficolot<-ggplot(PROPC, aes(x = MED_PROP, y = SIGLA, fill = MED_PROP)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 10.0), width = 0.9) +
+  scale_fill_gradient(low = "skyblue", high = "darkblue") +
+  theme_classic() +
+  coord_cartesian(expand = FALSE) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.5)) +
+  labs(title = "Proporção de Lotação dos Presídios", x = "Presídio", y = "Proporção (%)",
+       panel.grid = element_blank(), axis.ticks.y = element_blank(),
+       plot.margin = margin(t = 0, r = 0, b = 0, l = 0))
+
+#Salve a figura. Atualise o caminho desejado vem como as medidas e resolução
+ggsave("D:/Laboratório/Tuberculose/DRS_Morans/IMAGENS/figuragve.png", plot = Graficolot,
+       width = 8, height = 10, dpi = 300)
+
